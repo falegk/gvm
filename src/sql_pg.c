@@ -660,7 +660,7 @@ void
 sql_begin_immediate ()
 {
   /* TODO This is just an exclusive lock. */
-  sql_begin_exclusive ();
+    sql_begin_exclusive_lock (rand());
 }
 
 /**
@@ -672,7 +672,7 @@ int
 sql_begin_immediate_giveup ()
 {
   /* TODO This is just an exclusive lock. */
-  return sql_begin_exclusive_giveup ();
+  return sql_begin_exclusive_giveup_lock (rand());
 }
 
 /**

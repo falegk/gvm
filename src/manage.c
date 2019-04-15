@@ -6903,7 +6903,9 @@ manage_schedule (int (*fork_connection) (openvas_connection_t *, gchar *),
   clear_duration_schedules (0);
   update_duration_schedule_periods (0);
 
-  auto_delete_reports ();
+  // Antony Falegkos: Comment auto_delete_reports() cause its not in use
+  // and it runs every 10 seconds
+  // auto_delete_reports ();
 
   return 0;
 }

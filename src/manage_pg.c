@@ -49,9 +49,10 @@ manage_session_init (const char *uuid)
        " (id SERIAL PRIMARY KEY,"
        "  uuid text UNIQUE NOT NULL,"
        "  tz_override text);");
-  sql ("DELETE FROM current_credentials;");
-  if (uuid)
-    sql ("INSERT INTO current_credentials (uuid) VALUES ('%s');", uuid);
+  if (uuid) {
+      sql ("DELETE FROM current_credentials WHERE uuid = '%s';", uuid);
+      sql ("INSERT INTO current_credentials (uuid) VALUES ('%s');", uuid);
+  }
 }
 
 /**

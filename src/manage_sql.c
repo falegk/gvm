@@ -14025,8 +14025,8 @@ int
 init_task_iterator (iterator_t* iterator, const get_data_t *get)
 {
   static const char *filter_columns[] = TASK_ITERATOR_FILTER_COLUMNS;
-  static column_t columns[] = TASK_ITERATOR_COLUMNS;
-  static column_t where_columns[] = TASK_ITERATOR_WHERE_COLUMNS;
+//  static column_t columns[] = TASK_ITERATOR_COLUMNS;
+//  static column_t where_columns[] = TASK_ITERATOR_WHERE_COLUMNS;
   static column_t columns_min[] = TASK_ITERATOR_COLUMNS_MIN;
   static column_t where_columns_min[] = TASK_ITERATOR_WHERE_COLUMNS_MIN;
   char *filter;
@@ -14059,11 +14059,11 @@ init_task_iterator (iterator_t* iterator, const get_data_t *get)
                             "task",
                             get,
                             /* SELECT columns. */
-                            get->minimal ? columns_min : columns,
-                            get->minimal ? columns_min : columns,
+                            columns_min,
+                            columns_min,
                             /* Filterable columns not in SELECT columns. */
-                            get->minimal ? where_columns_min : where_columns,
-                            get->minimal ? where_columns_min : where_columns,
+                            where_columns_min,
+                            where_columns_min,
                             filter_columns,
                             0,
                             extra_tables,
@@ -14328,7 +14328,7 @@ init_manage_process (int update_nvt_cache, const gchar *database)
 
   /* Lock to avoid an error return from Postgres when multiple processes
    * create a function at the same time. */
-  sql_begin_exclusive ();
+  sql_begin_exclusive_lock (rand());
   if (manage_create_sql_functions ())
     {
       sql_rollback ();
@@ -16675,7 +16675,7 @@ clean_auth_cache ()
 static int
 check_db (int check_encryption_key)
 {
-  sql_begin_exclusive ();
+  sql_begin_exclusive_lock (rand());
   create_tables ();
   check_db_sequences ();
   if (progress)
@@ -17022,11 +17022,13 @@ init_manage_internal (GSList *log_config,
 
   if (stop_tasks && (nvt_cache_mode == 0))
     /* Stop any active tasks. */
+    g_info ("   [Initialize] Stop tasks...\n");
     stop_active_tasks ();
 
   /* Load the NVT cache into memory. */
 
   if (nvti_cache == NULL)
+    g_info ("   [Initialize] Update NVTi Cache...\n");
     update_nvti_cache ();
 
   sql_close ();
@@ -18338,7 +18340,7 @@ set_task_requested (task_t task, task_status_t *status)
 {
   task_status_t run_status;
 
-  sql_begin_exclusive ();
+  sql_begin_exclusive_lock (task);
 
   run_status = task_run_status (task);
   if (run_status == TASK_STATUS_REQUESTED
@@ -19384,7 +19386,7 @@ auto_delete_reports ()
 
   g_debug ("%s", __FUNCTION__);
 
-  if (sql_begin_exclusive_giveup ())
+  if (sql_begin_exclusive_giveup_lock (rand()))
     return;
 
   init_iterator (&tasks,
@@ -32403,7 +32405,7 @@ delete_task_lock (task_t task, int ultimate)
 
   g_debug ("   delete task %llu\n", task);
 
-  sql_begin_exclusive ();
+  sql_begin_immediate_with_key (task);
 
   if (sql_int ("SELECT hidden FROM tasks WHERE id = %llu;", task))
     {
@@ -49461,7 +49463,7 @@ init_task_schedule_iterator (iterator_t* iterator)
 {
   int ret;
 
-  ret = sql_begin_exclusive_giveup ();
+  ret = sql_begin_exclusive_giveup_lock (010101);
   if (ret)
     return ret;
 
@@ -65534,7 +65536,7 @@ delete_user (const char *user_id_arg, const char *name_arg, int ultimate,
         return 5;
     }
 
-  sql_begin_exclusive ();
+  sql_begin_exclusive_lock (rand());
 
   if (acl_user_may ("delete_user") == 0)
     {
@@ -68460,7 +68462,7 @@ manage_optimize (GSList *log_config, const gchar *database, const gchar *name)
         sql ("VACUUM;");
       else
         {
-          sql_begin_exclusive ();
+          sql_begin_exclusive_lock (rand());
           sql ("VACUUM;");
           sql_commit ();
         }
@@ -68528,7 +68530,7 @@ manage_optimize (GSList *log_config, const gchar *database, const gchar *name)
     {
       int changes_iana, changes_old_format;
 
-      sql_begin_exclusive ();
+      sql_begin_exclusive_lock (rand());
       sql ("UPDATE results"
            " SET port = substr (port, 1,"
            "                    strpos (port, ' (IANA:') - 1)"
@@ -68550,7 +68552,7 @@ manage_optimize (GSList *log_config, const gchar *database, const gchar *name)
   else if (strcasecmp (name, "cleanup-result-severities") == 0)
     {
       int missing_severity_changes = 0;
-      sql_begin_exclusive();
+      sql_begin_exclusive_lock (rand());
 
       if (sql_is_sqlite3 ())
         sql ("UPDATE results"
@@ -68584,7 +68586,7 @@ manage_optimize (GSList *log_config, const gchar *database, const gchar *name)
     {
       int changes;
 
-      sql_begin_exclusive ();
+      sql_begin_exclusive_lock (rand());
 
       changes = cleanup_schedule_times ();
 
@@ -68598,7 +68600,7 @@ manage_optimize (GSList *log_config, const gchar *database, const gchar *name)
     {
       int changes;
 
-      sql_begin_exclusive ();
+      sql_begin_exclusive_lock (rand());
 
       reports_build_count_cache (1, &changes);
 
@@ -68613,7 +68615,7 @@ manage_optimize (GSList *log_config, const gchar *database, const gchar *name)
     {
       int changes;
 
-      sql_begin_exclusive ();
+      sql_begin_exclusive_lock (rand());
 
       reports_build_count_cache (0, &changes);
 
