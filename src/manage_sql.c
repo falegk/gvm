@@ -14025,8 +14025,8 @@ int
 init_task_iterator (iterator_t* iterator, const get_data_t *get)
 {
   static const char *filter_columns[] = TASK_ITERATOR_FILTER_COLUMNS;
-//  static column_t columns[] = TASK_ITERATOR_COLUMNS;
-//  static column_t where_columns[] = TASK_ITERATOR_WHERE_COLUMNS;
+  static column_t columns[] = TASK_ITERATOR_COLUMNS;
+  static column_t where_columns[] = TASK_ITERATOR_WHERE_COLUMNS;
   static column_t columns_min[] = TASK_ITERATOR_COLUMNS_MIN;
   static column_t where_columns_min[] = TASK_ITERATOR_WHERE_COLUMNS_MIN;
   char *filter;
@@ -14059,11 +14059,11 @@ init_task_iterator (iterator_t* iterator, const get_data_t *get)
                             "task",
                             get,
                             /* SELECT columns. */
-                            columns_min,
-                            columns_min,
+                            get->minimal ? columns_min : columns,
+                            get->minimal ? columns_min : columns,
                             /* Filterable columns not in SELECT columns. */
-                            where_columns_min,
-                            where_columns_min,
+                            get->minimal ? where_columns_min : where_columns,
+                            get->minimal ? where_columns_min : where_columns,
                             filter_columns,
                             0,
                             extra_tables,
