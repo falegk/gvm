@@ -21606,6 +21606,9 @@ report_add_result (report_t report, result_t result)
        "                            FROM reports WHERE id = %llu)"
        " WHERE id = %llu;",
        report, report, result);
+  // Clone Systems Improvements
+  // Avoid inserts on report_counts
+  return;
 
   qod = sql_int ("SELECT qod FROM results WHERE id = %llu;",
                  result);
@@ -32659,7 +32662,11 @@ gboolean
 find_report_with_permission (const char* uuid, report_t* report,
                              const char *permission)
 {
-  return find_resource_with_permission ("report", uuid, report, permission, 0);
+    // Clone Systems Changes | Testing | 9/1/2020
+    // g_info ("%s: report uuid: %s\n", __FUNCTION__, uuid);
+    // return find_resource_with_permission ("report", uuid, report, permission, 0);
+    sql_int64 (report, "SELECT id FROM reports WHERE uuid = '%s'", uuid);
+    return FALSE;
 }
 
 /**
@@ -53247,7 +53254,7 @@ update_from_slave (task_t task, entity_t get_report, entity_t *report,
 
   /* Get any new results and hosts from the slave. */
 
-  sql_begin_immediate_with_key (task);
+  sql_begin_immediate_with_key (task + current_report + 1);
   hosts = (*report)->entities;
   while ((host_start = first_entity (hosts)))
     {
@@ -53279,7 +53286,7 @@ update_from_slave (task_t task, entity_t get_report, entity_t *report,
 
   assert (current_report);
 
-  sql_begin_immediate_with_key (task);
+  sql_begin_immediate_with_key (task + current_report + 2);
   results = entity->entities;
   while ((entity = first_entity (results)))
     {
